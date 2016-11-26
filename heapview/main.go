@@ -19,7 +19,7 @@ import (
 	// TODO: use html/template
 	"text/template"
 
-	heapdump "github.com/tombergan/goheapdump"
+	"github.com/tombergan/goheapdump/heapdump"
 )
 
 var (

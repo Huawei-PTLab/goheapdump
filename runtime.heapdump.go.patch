@@ -1,5 +1,5 @@
 diff --git a/src/runtime/heapdump.go b/src/runtime/heapdump.go
-index c317b5f..435cb91 100644
+index 6039417..9044717 100644
 --- a/src/runtime/heapdump.go
 +++ b/src/runtime/heapdump.go
 @@ -188,19 +188,36 @@ func dumptype(t *_type) {
@@ -43,7 +43,15 @@ index c317b5f..435cb91 100644
  	dumpint(tagObject)
  	dumpint(uint64(uintptr(obj)))
  	dumpmemrange(obj, size)
-@@ -261,31 +278,36 @@ func dumpframe(s *stkframe, arg unsafe.Pointer) bool {
+@@ -230,6 +247,7 @@ type childInfo struct {
+ 	args   bitvector // if args.n >= 0, pointer map of args region
+ 	sp     *uint8    // callee sp
+ 	depth  uintptr   // depth in call stack (0 == most recent)
++	callee string
+ }
+ 
+ // dump kinds & offsets of interesting fields in bv
+@@ -261,31 +279,36 @@ func dumpframe(s *stkframe, arg unsafe.Pointer) bool {
  	}
  	stkmap := (*stackmap)(funcdata(f, _FUNCDATA_LocalsPointerMaps))
  
@@ -90,7 +98,7 @@ index c317b5f..435cb91 100644
  	dumpstr(name)
  
  	// Dump fields in the outargs section
-@@ -314,8 +336,8 @@ func dumpframe(s *stkframe, arg unsafe.Pointer) bool {
+@@ -314,8 +337,8 @@ func dumpframe(s *stkframe, arg unsafe.Pointer) bool {
  			dumpint(uint64(off))
  		}
  	} else if stkmap.n > 0 {
@@ -101,7 +109,7 @@ index c317b5f..435cb91 100644
  		dumpbv(&bv, s.varp-uintptr(bv.n)*sys.PtrSize-s.sp)
  	}
  	dumpint(fieldKindEol)
-@@ -325,6 +347,7 @@ func dumpframe(s *stkframe, arg unsafe.Pointer) bool {
+@@ -325,6 +348,7 @@ func dumpframe(s *stkframe, arg unsafe.Pointer) bool {
  	child.arglen = s.arglen
  	child.sp = (*uint8)(unsafe.Pointer(s.sp))
  	child.depth++
@@ -109,7 +117,7 @@ index c317b5f..435cb91 100644
  	stkmap = (*stackmap)(funcdata(f, _FUNCDATA_ArgsPointerMaps))
  	if stkmap != nil {
  		child.args = stackmapdata(stkmap, pcdata)
-@@ -421,20 +444,29 @@ func finq_callback(fn *funcval, obj unsafe.Pointer, nret uintptr, fint *_type, o
+@@ -421,20 +445,29 @@ func finq_callback(fn *funcval, obj unsafe.Pointer, nret uintptr, fint *_type, o
  }
  
  func dumproots() {
@@ -152,8 +160,8 @@ index c317b5f..435cb91 100644
 +	}
  
  	// MSpan.types
- 	allspans := h_allspans
-@@ -683,16 +715,6 @@ func dumpfields(bv bitvector) {
+ 	for _, s := range mheap_.allspans {
+@@ -677,16 +710,6 @@ func dumpfields(bv bitvector) {
  	dumpint(fieldKindEol)
  }
  
