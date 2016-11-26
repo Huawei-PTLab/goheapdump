@@ -77,6 +77,7 @@ type varInfo struct {
 	Addr  string
 	Type  string
 	Value string
+	Data  []byte
 }
 
 func makeVarInfo(name string, v *heapdump.Value) varInfo {
@@ -743,6 +744,7 @@ func frameHandler(w http.ResponseWriter, r *http.Request) {
 // TODO: when we have dwarf info, some ptrs (e.g., in stacks?) are PCs
 type objInfo struct {
 	Addr            string
+	Data            []byte
 	Type            string
 	Offset          uint64
 	Size            uint64 // or estimate if unknown
@@ -775,7 +777,7 @@ var objTemplate = template.Must(template.New("obj").Parse(`
 		{{if ne .Offset 0}}
 			Address {{.Addr}} is at offset {{.Offset}} of object {{.BaseObj}}, which is {{.BaseObjSize}} bytes.
 			{{if .IsUnknownType}}
-				Field size is not known, but it as most {{.Size}} bytes.
+				Field size is not known, but is at most {{.Size}} bytes.
 			{{else}}
 				Field is {{.Size}} bytes.
 			{{end}}
@@ -786,7 +788,9 @@ var objTemplate = template.Must(template.New("obj").Parse(`
 
 		<h3>Fields</h3>
 		{{if .IsUnknownType}}
-			Object type is not known. Showing pointer fields from the GC signature.<br><br>
+			Object type is not known. Dumping raw bytes, and showing pointer fields from the GC signature.<br><br>
+			<pre>{{range .Data}}{{printf "%02x" .}} {{end}}
+			</pre><br><br>
 		{{end}}
 		<table>
 			<tr>
@@ -849,6 +853,7 @@ func objHandler(w http.ResponseWriter, r *http.Request) {
 	// Basic info about the object.
 	info := objInfo{
 		Addr:   fmt.Sprintf("0x%x", addr),
+		Data:	v.Bytes(),
 		Offset: addr - v.Addr(),
 	}
 	if info.Offset != 0 {
